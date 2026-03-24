@@ -1,0 +1,9 @@
+router bgp {{ bgp_asn }}
+ bgp log-neighbor-changes
+{% for n in neighbors %}
+ neighbor {{ n.ip }} remote-as {{ n.remote_as }}
+{% endfor %}
+{% for net in advertised_networks %}
+ network {{ net }}
+{% endfor %}
+

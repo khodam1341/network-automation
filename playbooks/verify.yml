@@ -1,0 +1,17 @@
+- name: Verify post-deploy state
+  hosts: routers
+  gather_facts: no
+  tasks:
+    - name: Collect BGP summary
+      cisco.ios.ios_command:
+        commands:
+          - show ip bgp summary
+      register: bgp_output
+
+    - name: Check BGP sessions look established
+      ansible.builtin.assert:
+        that:
+          - "'Idle' not in bgp_output.stdout[0]"
+          - "'Active' not in bgp_output.stdout[0]"
+        fail_msg: "One or more BGP peers are not established"
+

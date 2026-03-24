@@ -1,0 +1,13 @@
+- name: Backup running config
+  hosts: routers
+  gather_facts: no
+  tasks:
+    - name: Save running config locally
+      cisco.ios.ios_config:
+        backup: yes
+      register: backup_result
+
+    - name: Show backup file path
+      ansible.builtin.debug:
+        var: backup_result.backup_path
+

@@ -1,0 +1,7 @@
+- name: Deploy router config
+  hosts: routers
+  gather_facts: no
+  serial: 1
+  roles:
+    - router_config
+

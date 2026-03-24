@@ -1,0 +1,112 @@
+name: Network CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tooling
+        run: |
+          pip install ansible ansible-lint yamllint
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Lint YAML
+        run: yamllint .
+
+      - name: Lint Ansible
+        run: ansible-lint
+
+      - name: Syntax check
+        run: ansible-playbook -i inventory/staging.yml playbooks/validate.yml --syntax-check
+
+      - name: Dry run staging
+        env:
+          ANSIBLE_NET_USERNAME: ${{ secrets.ANSIBLE_NET_USERNAME }}
+          ANSIBLE_NET_PASSWORD: ${{ secrets.ANSIBLE_NET_PASSWORD }}
+          ANSIBLE_NET_ENABLE_PASSWORD: ${{ secrets.ANSIBLE_NET_ENABLE_PASSWORD }}
+        run: ansible-playbook -i inventory/staging.yml playbooks/deploy.yml --check --diff
+
+  deploy_staging:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          pip install ansible
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Backup staging
+        env:
+          ANSIBLE_NET_USERNAME: ${{ secrets.ANSIBLE_NET_USERNAME }}
+          ANSIBLE_NET_PASSWORD: ${{ secrets.ANSIBLE_NET_PASSWORD }}
+          ANSIBLE_NET_ENABLE_PASSWORD: ${{ secrets.ANSIBLE_NET_ENABLE_PASSWORD }}
+        run: ansible-playbook -i inventory/staging.yml playbooks/backup.yml
+
+      - name: Deploy staging
+        env:
+          ANSIBLE_NET_USERNAME: ${{ secrets.ANSIBLE_NET_USERNAME }}
+          ANSIBLE_NET_PASSWORD: ${{ secrets.ANSIBLE_NET_PASSWORD }}
+          ANSIBLE_NET_ENABLE_PASSWORD: ${{ secrets.ANSIBLE_NET_ENABLE_PASSWORD }}
+        run: ansible-playbook -i inventory/staging.yml playbooks/deploy.yml
+
+      - name: Verify staging
+        env:
+          ANSIBLE_NET_USERNAME: ${{ secrets.ANSIBLE_NET_USERNAME }}
+          ANSIBLE_NET_PASSWORD: ${{ secrets.ANSIBLE_NET_PASSWORD }}
+          ANSIBLE_NET_ENABLE_PASSWORD: ${{ secrets.ANSIBLE_NET_ENABLE_PASSWORD }}
+        run: ansible-playbook -i inventory/staging.yml playbooks/verify.yml
+
+  deploy_production:
+    needs: deploy_staging
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          pip install ansible
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Backup production
+        env:
+          ANSIBLE_NET_USERNAME: ${{ secrets.ANSIBLE_NET_USERNAME }}
+          ANSIBLE_NET_PASSWORD: ${{ secrets.ANSIBLE_NET_PASSWORD }}
+          ANSIBLE_NET_ENABLE_PASSWORD: ${{ secrets.ANSIBLE_NET_ENABLE_PASSWORD }}
+        run: ansible-playbook -i inventory/production.yml playbooks/backup.yml
+
+      - name: Deploy production
+        env:
+          ANSIBLE_NET_USERNAME: ${{ secrets.ANSIBLE_NET_USERNAME }}
+          ANSIBLE_NET_PASSWORD: ${{ secrets.ANSIBLE_NET_PASSWORD }}
+          ANSIBLE_NET_ENABLE_PASSWORD: ${{ secrets.ANSIBLE_NET_ENABLE_PASSWORD }}
+        run: ansible-playbook -i inventory/production.yml playbooks/deploy.yml
+
+      - name: Verify production
+        env:
+          ANSIBLE_NET_USERNAME: ${{ secrets.ANSIBLE_NET_USERNAME }}
+          ANSIBLE_NET_PASSWORD: ${{ secrets.ANSIBLE_NET_PASSWORD }}
+          ANSIBLE_NET_ENABLE_PASSWORD: ${{ secrets.ANSIBLE_NET_ENABLE_PASSWORD }}
+        run: ansible-playbook -i inventory/production.yml playbooks/verify.yml
+

@@ -1,0 +1,4 @@
+- name: Render and apply BGP config
+  cisco.ios.ios_config:
+    src: bgp_config.j2
+

@@ -1,0 +1,11 @@
+- name: Validate inventory and variables
+  hosts: routers
+  gather_facts: no
+  tasks:
+    - name: Ensure BGP ASN exists
+      ansible.builtin.assert:
+        that:
+          - bgp_asn is defined
+          - neighbors is defined
+          - advertised_networks is defined
+

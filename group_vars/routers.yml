@@ -1,0 +1,11 @@
+bgp_asn: 65001
+loopback_ip: 192.0.2.1
+neighbors:
+  - ip: 192.0.2.2
+    remote_as: 65002
+  - ip: 192.0.2.3
+    remote_as: 65003
+advertised_networks:
+  - 10.100.0.0 mask 255.255.0.0
+  - 10.101.0.0 mask 255.255.0.0
+

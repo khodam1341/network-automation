@@ -1,0 +1,9 @@
+all:
+  children:
+    routers:
+      hosts:
+        rtr-stg-1:
+          ansible_host: 10.10.10.11
+        rtr-stg-2:
+          ansible_host: 10.10.10.12
+
